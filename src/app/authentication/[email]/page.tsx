@@ -77,10 +77,15 @@ export default function AuthenticationPage() {
       });
       if (res.status === 200) {
         // On successful validation, you will save the JWT token and redirect
-        toast.success("OTP verified, redirecting...");
-        // Assuming token is in response data (adjust as per your backend response)
-        document.cookie = `token=${res.data.token}; HttpOnly; Path=/;`;
-        router.push("/");
+        toast.success("OTP verified successfully!");
+        if (res.data.newUser) {
+          router.push("/user-profile");
+        } else {
+          router.push("/");
+        }
+
+        // document.cookie = `token=${res.data.token}; HttpOnly; Path=/;`;
+        // router.push("/");
       } else {
         toast.error("Invalid OTP");
       }
