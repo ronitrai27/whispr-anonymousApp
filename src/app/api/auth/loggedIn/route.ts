@@ -4,10 +4,10 @@ import Redis from 'ioredis';
 import { z } from 'zod';
 import { User } from '@/models/userModel';
 import { cookies } from 'next/headers';
-
+import jwt from "jsonwebtoken";
 // Redis client setup
 const redis = new Redis(process.env.REDIS_URL!);
-
+const JWT_SECRET = process.env.JWT_SECRET as string;
 const otpSchema = z.object({
   otp: z.string().length(6, 'OTP must be 6 digits').regex(/^\d+$/, 'OTP must be numeric'),
 });
@@ -41,8 +41,22 @@ export async function POST(req: Request) {
     //MEANS OTP IS VALID 
     const existingUser = await User.findOne({ email });
 
-    //  Set temp_email cookie only if it's a new user
-    if (!existingUser) {
+    if (existingUser) {
+      // ✅ Set JWT token for existing users
+      const token = jwt.sign(
+        { userId: existingUser._id, email: existingUser.email },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+    
+      cookieStore.set("auth_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+    } else {
+      // ✅ Set temp_email for new users
       cookieStore.set("temp_email", email, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -51,7 +65,7 @@ export async function POST(req: Request) {
       });
     }
 
-    // Optional: Delete the OTP after successful verification
+
     await redis.del(`otp:${email}`);
 
     return NextResponse.json({

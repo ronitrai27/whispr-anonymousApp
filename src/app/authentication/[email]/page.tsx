@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useProfile } from "@/context/ProfileContext";
+import { useAppContext } from "@/context/AppContext";
 import { OTP_RESEND_INTERVAL } from "@/lib/otpTimer";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -8,15 +9,17 @@ import { useRouter } from "next/navigation";
 import { otpSchema } from "@/schemas/otpSchema";
 import z from "zod";
 import Image from "next/image";
+import { Loader } from "lucide-react";
 export default function AuthenticationPage() {
   const { email } = useProfile();
+  const { setUser } = useAppContext();
   const [timer, setTimer] = useState<number>(OTP_RESEND_INTERVAL);
   const [resending, setResending] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const inputsRef = useRef<(HTMLInputElement | null)[]>([]);
   const [verifying, setVerifying] = useState(false);
   const router = useRouter();
-
+  const [otpVerified, setOtpVerified] = useState(false);
   // Timer Countdown
   useEffect(() => {
     const interval = setInterval(() => {
@@ -57,14 +60,22 @@ export default function AuthenticationPage() {
     }
   };
 
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+  // WHEN USER PRESS BUTTON TO VERIFY OTP --------------------
   const handleSubmit = async () => {
-    // Validate OTP using Zod schema
     const enteredOtp = otp.join("");
     try {
-      otpSchema.parse(enteredOtp); // This will throw an error if invalid
+      otpSchema.parse(enteredOtp);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message); // Display validation error message
+        toast.error(error.errors[0].message);
       }
       return;
     }
@@ -76,16 +87,17 @@ export default function AuthenticationPage() {
         otp: enteredOtp,
       });
       if (res.status === 200) {
-        // On successful validation, you will save the JWT token and redirect
         toast.success("OTP verified successfully!");
+        setOtpVerified(true);
         if (res.data.newUser) {
           router.push("/user-profile");
         } else {
-          router.push("/");
+          const me = await axios.get("/api/user/me");
+          setUser(me.data.user);
+          setTimeout(() => {
+            router.push("/");
+          }, 1000);
         }
-
-        // document.cookie = `token=${res.data.token}; HttpOnly; Path=/;`;
-        // router.push("/");
       } else {
         toast.error("Invalid OTP");
       }
@@ -112,8 +124,8 @@ export default function AuthenticationPage() {
         </div>
 
         {/* OTP Sent Message */}
-        <p className="font-medium text-[16px] tracking-tight">
-          We sent an OTP to: {email}
+        <p className="font-[400] text-[16px] tracking-tight text-gray-600">
+          We sent an OTP to: <span className="text-black ">{email}</span>
         </p>
 
         {/* OTP Input Fields */}
@@ -125,6 +137,7 @@ export default function AuthenticationPage() {
               type="text"
               value={digit}
               onChange={(e) => handleOtpChange(e, index)}
+              onKeyDown={(e) => handleKeyDown(e, index)}
               maxLength={1}
               className="w-12 h-12 text-center border-2 border-black rounded-lg"
             />
@@ -134,10 +147,19 @@ export default function AuthenticationPage() {
         {/* OTP Verification Button */}
         <button
           onClick={handleSubmit}
-          disabled={verifying}
-          className="mt-4 w-full py-2 bg-purple-600 text-white rounded-lg disabled:bg-gray-400 cursor-pointer hover:bg-purple-500"
+          disabled={verifying || otpVerified}
+          className="mt-4 w-full py-2 bg-purple-600 text-white rounded-lg disabled:bg-purple-500 cursor-pointer hover:bg-purple-700 flex items-center justify-center gap-2"
         >
-          {verifying ? "Verifying..." : "Verify OTP"}
+          {otpVerified ? (
+            "Redirecting..."
+          ) : verifying ? (
+            <>
+              Verifying
+              <Loader className="animate-spin h-5 w-5" />
+            </>
+          ) : (
+            "Verify OTP"
+          )}
         </button>
 
         {/* Resend OTP Button */}

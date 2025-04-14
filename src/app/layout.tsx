@@ -3,6 +3,8 @@ import { Gabarito, Inter, IBM_Plex_Serif } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { AppProvider } from "@/context/AppContext";
+import LayoutWrapper from "@/components/LayoutWrapper";
 const gabarito = Gabarito({
   variable: "--font-gabarito",
   subsets: ["latin"],
@@ -33,10 +35,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${gabarito.variable} ${inter.variable} ${ibmPlexSerif.variable} antialiased`}
+        className={`${gabarito.variable} ${inter.variable} ${ibmPlexSerif.variable} antialiased select-none`}
       >
         <Toaster position="top-right" />
-        <ProfileProvider>{children}</ProfileProvider>
+        <AppProvider>
+          <ProfileProvider>
+            <LayoutWrapper>{children}</LayoutWrapper>
+          </ProfileProvider>
+        </AppProvider>
       </body>
     </html>
   );

@@ -68,7 +68,7 @@ export default function RegisterPage() {
 
       <main className="z-50 border-[1px] border-[#e7e7e731] bg-slate-300/30 backdrop-blur-3xl rounded-md shadow-lg shadow-purple-500/20 p-4">
         <div className="logo-container relative w-20 h-20 mt-2 mx-auto">
-          <div className="logo-bg absolute w-12 h-12 rounded-2xl bg-slate-200" />
+          <div className="logo-bg absolute w-12 h-12 rounded-2xl bg-accent" />
           <div className="logo-text absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 font-medium text-[32px] text-black tracking-tight">
             <h2> Whispr.</h2>
           </div>
@@ -102,7 +102,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-gradient-to-r from-purple-500 to-purple-800 text-white font-medium py-3 px-4 rounded-xl shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center"
+            className="w-full bg-purple-700 text-white font-medium py-3 px-4 rounded-xl shadow-lg hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-95 transition-all duration-300 flex items-center justify-center cursor-pointer"
           >
             {isSubmitting ? (
               <>
